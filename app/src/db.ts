@@ -1,4 +1,4 @@
-import mariadb from 'mariadb';
+import mariadb from "mariadb";
 
 export interface DbConfig {
   host: string;
@@ -23,7 +23,7 @@ export function initDb(config: DbConfig): void {
 
 export function getPool(): mariadb.Pool {
   if (!pool) {
-    throw new Error('Database pool is not initialized');
+    throw new Error("Database pool is not initialized");
   }
   return pool;
 }

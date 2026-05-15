@@ -12,41 +12,41 @@ NGINX_SITE="/etc/nginx/sites-available/mywebapp"
 SUDOERS_FILE="/etc/sudoers.d/operator"
 
 if [[ "$EUID" -ne 0 ]]; then
-    echo "Run this script as root or with sudo" >&2
-    exit 1
+  echo "Run this script as root or with sudo" >&2
+  exit 1
 fi
 
 echo "==> Installing packages"
 apt-get update -qq
 apt-get install -y --no-install-recommends \
-    curl gnupg ca-certificates mariadb-server nginx
+  curl gnupg ca-certificates mariadb-server nginx
 
-if ! command -v node &>/dev/null; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-    apt-get install -y nodejs
+if ! command -v node &> /dev/null; then
+  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  apt-get install -y nodejs
 fi
 
 echo "==> Creating system users"
 
-if ! id student &>/dev/null; then
-    useradd -m -s /bin/bash student
+if ! id student &> /dev/null; then
+  useradd -m -s /bin/bash student
 fi
 usermod -aG sudo student
 
-if ! id teacher &>/dev/null; then
-    useradd -m -s /bin/bash teacher
+if ! id teacher &> /dev/null; then
+  useradd -m -s /bin/bash teacher
 fi
 usermod -aG sudo teacher
 echo 'teacher:12345678' | chpasswd
 passwd --expire teacher
 
-if ! id app &>/dev/null; then
-    useradd --system --no-create-home --shell /usr/sbin/nologin app
+if ! id app &> /dev/null; then
+  useradd --system --no-create-home --shell /usr/sbin/nologin app
 fi
 
 # Враховуємо існуючу групу operator в Ubuntu
-if ! id operator &>/dev/null; then
-    useradd -g operator -m -s /bin/bash operator
+if ! id operator &> /dev/null; then
+  useradd -g operator -m -s /bin/bash operator
 fi
 echo 'operator:12345678' | chpasswd
 passwd --expire operator
@@ -78,7 +78,7 @@ chown -R app:app "${APP_DIR}"
 
 echo "==> Installing systemd unit files"
 sed "s/PLACEHOLDER_PASSWORD/${DB_PASSWORD}/g" \
-    "${REPO_DIR}/deploy/mywebapp.service" > "${SERVICE_FILE}"
+  "${REPO_DIR}/deploy/mywebapp.service" > "${SERVICE_FILE}"
 cp "${REPO_DIR}/deploy/mywebapp.socket" "${SOCKET_FILE}"
 
 systemctl daemon-reload
@@ -95,7 +95,7 @@ systemctl enable --now nginx
 systemctl reload nginx
 
 echo "==> Configuring operator sudo rules"
-cat > "${SUDOERS_FILE}" <<'EOF'
+cat > "${SUDOERS_FILE}" << 'EOF'
 operator ALL=(ALL) NOPASSWD: \
     /usr/bin/systemctl start mywebapp, \
     /usr/bin/systemctl stop mywebapp, \
@@ -111,17 +111,17 @@ echo "10" > /home/student/gradebook
 chown student:student /home/student/gradebook
 
 echo "==> Locking default ubuntu user"
-if id ubuntu &>/dev/null; then
-    passwd -l ubuntu
+if id ubuntu &> /dev/null; then
+  passwd -l ubuntu
 fi
 
 echo "==> Verifying deployment"
 sleep 3
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/tasks || true)
 if [[ "$HTTP_STATUS" == "200" ]]; then
-    echo "Service is up and running flawlessly!"
+  echo "Service is up and running flawlessly!"
 else
-    echo "Warning: service returned HTTP ${HTTP_STATUS}. Check logs using: sudo journalctl -u mywebapp.service"
+  echo "Warning: service returned HTTP ${HTTP_STATUS}. Check logs using: sudo journalctl -u mywebapp.service"
 fi
 
 echo ""
