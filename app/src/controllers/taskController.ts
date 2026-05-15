@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 import * as taskService from '../services/taskService';
 import { sendTask, sendTaskList } from '../utils/response';
+import { createTaskSchema, taskIdSchema } from '../schemas/taskSchema';
+import { formatZodError } from '../utils/zodError';
 
 export async function getAll(req: Request, res: Response): Promise<void> {
   try {
@@ -12,13 +15,13 @@ export async function getAll(req: Request, res: Response): Promise<void> {
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const { title } = req.body as { title?: string };
-  if (!title || typeof title !== 'string' || title.trim() === '') {
-    res.status(400).json({ error: 'title is required' });
+  const parsed = createTaskSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ errors: formatZodError(parsed.error) });
     return;
   }
   try {
-    const task = await taskService.createTask(title);
+    const task = await taskService.createTask(parsed.data.title);
     res.status(201);
     sendTask(req, res, task);
   } catch {
@@ -27,13 +30,13 @@ export async function create(req: Request, res: Response): Promise<void> {
 }
 
 export async function markDone(req: Request, res: Response): Promise<void> {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    res.status(400).json({ error: 'Invalid task id' });
+  const parsed = taskIdSchema.safeParse(req.params);
+  if (!parsed.success) {
+    res.status(400).json({ errors: formatZodError(parsed.error) });
     return;
   }
   try {
-    const task = await taskService.markTaskDone(id);
+    const task = await taskService.markTaskDone(parsed.data.id);
     if (!task) {
       res.status(404).json({ error: 'Task not found' });
       return;
