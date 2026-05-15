@@ -44,8 +44,9 @@ if ! id app &>/dev/null; then
     useradd --system --no-create-home --shell /usr/sbin/nologin app
 fi
 
+# Враховуємо існуючу групу operator в Ubuntu
 if ! id operator &>/dev/null; then
-    useradd -m -s /bin/bash operator
+    useradd -g operator -m -s /bin/bash operator
 fi
 echo 'operator:12345678' | chpasswd
 passwd --expire operator
@@ -54,18 +55,26 @@ echo "==> Configuring MariaDB"
 systemctl enable --now mariadb
 
 mariadb -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';"
+
+mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1';"
+mariadb -e "ALTER USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';"
 mariadb -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'127.0.0.1';"
+
+mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost';"
+mariadb -e "ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+mariadb -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';"
+
 mariadb -e "FLUSH PRIVILEGES;"
 
 echo "==> Deploying application to ${APP_DIR}"
 mkdir -p "${APP_DIR}"
 cp -r "${REPO_DIR}/app/." "${APP_DIR}/"
-chown -R app:app "${APP_DIR}"
 
 cd "${APP_DIR}"
-npm ci --omit=dev
+npm install --include=dev
 npm run build
+
+chown -R app:app "${APP_DIR}"
 
 echo "==> Installing systemd unit files"
 sed "s/PLACEHOLDER_PASSWORD/${DB_PASSWORD}/g" \
@@ -107,15 +116,15 @@ if id ubuntu &>/dev/null; then
 fi
 
 echo "==> Verifying deployment"
-sleep 2
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: text/html" http://127.0.0.1:8080/ || true)
+sleep 3
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/tasks || true)
 if [[ "$HTTP_STATUS" == "200" ]]; then
-    echo "Service is up and running"
+    echo "Service is up and running flawlessly!"
 else
-    echo "Warning: service returned HTTP ${HTTP_STATUS}. Check: systemctl status mywebapp.service"
+    echo "Warning: service returned HTTP ${HTTP_STATUS}. Check logs using: sudo journalctl -u mywebapp.service"
 fi
 
 echo ""
-echo "==> Installation complete"
-echo "    DB password stored in: ${SERVICE_FILE}"
+echo "==> Installation complete successfully"
+echo "    DB password stored securely in: ${SERVICE_FILE}"
 echo "    Access the app via: http://<vm-ip>/"

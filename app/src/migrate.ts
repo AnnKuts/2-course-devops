@@ -12,31 +12,41 @@ const dbConfig = {
 };
 
 async function migrate(): Promise<void> {
+  console.log('==> Starting database migration queries...');
   initDb(dbConfig);
   const pool = getPool();
   let conn;
   try {
     conn = await pool.getConnection();
+
     await conn.query(`
       CREATE TABLE IF NOT EXISTS tasks (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
+                                         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                                         title VARCHAR(255) NOT NULL,
         status ENUM('pending', 'done') NOT NULL DEFAULT 'pending',
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
+        )
     `);
+
     await conn.query(`
       CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks (status)
     `);
-    console.log('Migration completed successfully');
-    process.exit(0);
+
+    console.log('==> SQL queries executed successfully');
   } catch (err) {
-    console.error('Migration failed:', err);
+    console.error('Migration database logic failed:', err);
     process.exit(1);
   } finally {
     if (conn) conn.release();
     await pool.end();
   }
 }
-
-migrate();
+migrate()
+    .then(() => {
+      console.log('Migration completed successfully. Exiting.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Fatal top-level migration error:', err);
+      process.exit(1);
+    });
