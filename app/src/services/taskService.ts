@@ -1,4 +1,4 @@
-import { Task } from '../utils/html';
+import { Task } from '../types/task';
 import * as taskRepository from '../repositories/taskRepository';
 
 export async function getAllTasks(): Promise<Task[]> {

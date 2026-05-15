@@ -1,25 +1,23 @@
 import { Request, Response } from 'express';
-import { Task, taskListHtml, taskHtml } from '../utils/html';
+import { Task } from '../types/task';
 
-export function sendResponse(
-  req: Request,
-  res: Response,
-  data: object | object[],
-  htmlContent: string
-): void {
+function acceptsHtml(req: Request): boolean {
   const accept = req.headers['accept'] || '';
-  if (accept.includes('text/html')) {
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(htmlContent);
+  return accept.includes('text/html');
+}
+
+export function sendTaskList(req: Request, res: Response, tasks: Task[]): void {
+  if (acceptsHtml(req)) {
+    res.render('tasks/list', { tasks });
   } else {
-    res.json(data);
+    res.json(tasks);
   }
 }
 
 export function sendTask(req: Request, res: Response, task: Task): void {
-  sendResponse(req, res, task, taskHtml(task));
-}
-
-export function sendTaskList(req: Request, res: Response, tasks: Task[]): void {
-  sendResponse(req, res, tasks, taskListHtml(tasks));
+  if (acceptsHtml(req)) {
+    res.render('tasks/task', { task });
+  } else {
+    res.json(task);
+  }
 }

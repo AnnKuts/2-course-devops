@@ -1,5 +1,5 @@
 import { getPool } from '../db';
-import { Task } from '../utils/html';
+import { Task } from '../types/task';
 
 export async function findAll(): Promise<Task[]> {
   const pool = getPool();
