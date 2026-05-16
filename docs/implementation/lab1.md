@@ -14,7 +14,6 @@
   - [DB schema verification](#verify-database-schema-after-automated-migration)
   - [DB local access only](#verify-db-is-only-accessible-locally)
 
----
 
 ### Variant
 - group list number: 10
@@ -36,7 +35,6 @@ V2=1, V3=2, V5=1
 - V3=2: web application theme - Task Tracker
 - V5=1: port - 8080
 
----
 
 ## Application
 
@@ -67,8 +65,6 @@ V2=1, V3=2, V5=1
 Business endpoints respond based on the `Accept` header:
 - `Accept: text/html` — returns a plain HTML page (table for lists, no JS, no CSS)
 - `Accept: application/json` — returns JSON data
-
----
 
 ## Development Setup
 
@@ -119,7 +115,6 @@ node dist/index.js \
   --db-name taskdb --db-user mywebapp --db-password secret
 ```
 
----
 
 ## Deployment
 
