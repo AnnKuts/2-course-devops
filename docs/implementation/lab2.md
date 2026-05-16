@@ -57,6 +57,6 @@ To build and start all containers:
 docker-compose up -d --build
 ```
 
-The application will be available at `http://localhost`.
+The application will be available at `http://localhost:3000`.
 
 > **Note:** The research part of Laboratory Work №2 (analysis of layer caching, multi-stage builds, alpine vs debian) is available in a separate repository: [https://github.com/AnnKuts/2-course-devops-lab2-research](https://github.com/AnnKuts/2-course-devops-lab2-research)
